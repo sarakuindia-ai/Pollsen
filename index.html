@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Political Sentiment Analyzer - Tamil Nadu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #faf5ff 100%); }
+        .party-card { transition: all 0.3s ease; }
+        .party-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .metric-card { transition: all 0.2s ease; }
+        .metric-card:hover { transform: scale(1.02); }
+        .tab-button.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+        .tab-button { border-bottom: 2px solid transparent; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Political Sentiment Analyzer</h1>
+                    <p class="text-gray-600 mt-1">Real-time social media pulse for Tamil Nadu Politics</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <span>📅</span>
+                        <span>Last Updated: Aug 27, 2025</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm text-gray-600">
+                        <span>👁️</span>
+                        <span>128.4K Total Mentions</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex space-x-8">
+                <button onclick="showTab('overview')" class="tab-button active py-4 px-2 text-sm font-medium transition-colors" id="tab-overview">
+                    <span class="mr-2">📊</span>Overview
+                </button>
+                <button onclick="showTab('constituency')" class="tab-button py-4 px-2 text-sm font-medium transition-colors text-gray-500" id="tab-constituency">
+                    <span class="mr-2">🗺️</span>Constituencies
+                </button>
+                <button onclick="showTab('location')" class="tab-button py-4 px-2 text-sm font-medium transition-colors text-gray-500" id="tab-location">
+                    <span class="mr-2">📍</span>Locations
+                </button>
+                <button onclick="showTab('party')" class="tab-button py-4 px-2 text-sm font-medium transition-colors text-gray-500" id="tab-party">
+                    <span class="mr-2">🏛️</span>Party Analysis
+                </button>
+                <button onclick="showTab('summary')" class="tab-button py-4 px-2 text-sm font-medium transition-colors text-gray-500" id="tab-summary">
+                    <span class="mr-2">📈</span>Summary
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Overview Tab -->
+        <div id="overview-content" class="tab-content">
+            <div class="space-y-6">
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Constituency Sentiment Distribution</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">Social Media Engagement</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Party Sentiment Cards -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Overall Party Sentiment Analysis</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="party-cards">
+                        <!-- Party cards will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Trending Topics -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">Trending Topics</h3>
+                    <div class="space-y-3" id="trending-topics">
+                        <!-- Trending topics will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Constituency Tab -->
+        <div id="constituency-content" class="tab-content hidden">
+            <div class="text-center py-16">
+                <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Select a Constituency</h2>
+                    <p class="text-gray-600 mb-6">Click on a constituency from the pie chart in the Overview tab to view detailed analysis</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="constituency-list">
+                        <!-- Constituency buttons will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            <div id="constituency-details" class="hidden">
+                <!-- Constituency details will be shown here -->
+            </div>
+        </div>
+
+        <!-- Location Tab -->
+        <div id="location-content" class="tab-content hidden">
+            <div class="text-center py-16">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Location Analysis</h2>
+                    <p class="text-gray-600">Select a constituency first, then click on a specific location to view detailed analysis</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Party Tab -->
+        <div id="party-content" class="tab-content hidden">
+            <div class="text-center py-16">
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Party Analysis</h2>
+                    <p class="text-gray-600 mb-6">Click on a party from any view to see detailed sentiment analysis</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="party-selection">
+                        <!-- Party selection buttons will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            <div id="party-details" class="hidden">
+                <!-- Party details will be shown here -->
+            </div>
+        </div>
+
+        <!-- Summary Tab -->
+        <div id="summary-content" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800">Party Comparison Summary</h2>
+                    <div class="grid grid-cols-1 gap-6" id="party-comparison">
+                        <!-- Party comparison cards will be inserted here -->
+                    </div>
+
+                    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">Key Insights</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white p-4 rounded border-l-4 border-green-500">
+                                <h4 class="font-semibold text-green-700 mb-2">Most Positive Sentiment</h4>
+                                <p class="text-gray-700">TVK leads with 55% positive sentiment, driven by youth appeal and fresh political narrative.</p>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-red-500">
+                                <h4 class="font-semibold text-red-700 mb-2">Corruption Concerns</h4>
+                                <p class="text-gray-700">ADMK faces highest corruption tagging at 35%, impacting overall public trust.</p>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-blue-500">
+                                <h4 class="font-semibold text-blue-700 mb-2">Development Focus</h4>
+                                <p class="text-gray-700">TVK and NTK lead in development perception, resonating with youth aspirations.</p>
+                            </div>
+                            <div class="bg-white p-4 rounded border-l-4 border-purple-500">
+                                <h4 class="font-semibold text-purple-700 mb-2">Leadership Appeal</h4>
+                                <p class="text-gray-700">Celebrity factor gives TVK (Vijay) strong leadership perception at 52%.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Data Sources</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li>• X (Twitter) API</li>
+                        <li>• Facebook Graph API</li>
+                        <li>• Instagram Basic Display</li>
+                        <li>• YouTube Data API</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Methodology</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li>• Natural Language Processing</li>
+                        <li>• Sentiment Analysis ML</li>
+                        <li>• Real-time Data Processing</li>
+                        <li>• Statistical Modeling</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Coverage</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li>• 10 Tamil Nadu Constituencies</li>
+                        <li>• 5 Major Political Parties</li>
+                        <li>• 4 Social Media Platforms</li>
+                        <li>• 24/7 Real-time Monitoring</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <div class="text-sm text-gray-300">
+                        <p>Demo Application</p>
+                        <p>Political Analytics Team</p>
+                        <p class="mt-2 text-gray-400">⚠️ This is a demonstration app with simulated data for validation purposes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Data
+        const constituencies = [
+            { id: 1, name: "Chennai Central", totalVoters: 245000, locations: ["T. Nagar", "Anna Nagar", "Egmore", "Thousand Lights"], sentimentScore: 0.65, totalMentions: 15420 },
+            { id: 2, name: "Chennai North", totalVoters: 198000, locations: ["Royapuram", "Kolathur", "Thiru Vi Ka Nagar", "Dr. Radhakrishnan Nagar"], sentimentScore: 0.58, totalMentions: 12890 },
+            { id: 3, name: "Chennai South", totalVoters: 220000, locations: ["Mylapore", "Velachery", "Sholinganallur", "Perungudi"], sentimentScore: 0.72, totalMentions: 18650 },
+            { id: 4, name: "Sriperumbudur", totalVoters: 185000, locations: ["Sriperumbudur Town", "Kanchipuram Rural", "Walajabad", "Thiruporur"], sentimentScore: 0.61, totalMentions: 9870 },
+            { id: 5, name: "Kancheepuram", totalVoters: 165000, locations: ["Kancheepuram City", "Uthiramerur", "Cheyyur", "Madurantakam"], sentimentScore: 0.55, totalMentions: 8450 },
+            { id: 6, name: "Arakkonam", totalVoters: 178000, locations: ["Arakkonam Town", "Nemili", "Sholinghur", "Walajah"], sentimentScore: 0.63, totalMentions: 7230 },
+            { id: 7, name: "Vellore", totalVoters: 192000, locations: ["Vellore City", "Katpadi", "Gudiyatham", "Pernambut"], sentimentScore: 0.59, totalMentions: 11200 },
+            { id: 8, name: "Krishnagiri", totalVoters: 155000, locations: ["Krishnagiri Town", "Hosur", "Denkanikottai", "Pochampalli"], sentimentScore: 0.57, totalMentions: 6890 },
+            { id: 9, name: "Dharmapuri", totalVoters: 148000, locations: ["Dharmapuri Town", "Harur", "Nallampalli", "Pappireddipatti"], sentimentScore: 0.52, totalMentions: 5670 },
+            { id: 10, name: "Salem", totalVoters: 210000, locations: ["Salem City", "Mettur", "Omalur", "Sankari"], sentimentScore: 0.66, totalMentions: 14320 }
+        ];
+
+        const parties = [
+            { id: 'DMK', name: 'Dravida Munnetra Kazhagam', color: '#FF6B35', leader: 'M.K. Stalin', overallSentiment: { positive: 38, negative: 42, neutral: 20, corruption: 25, development: 35, leadership: 28 } },
+            { id: 'ADMK', name: 'All India Anna Dravida Munnetra Kazhagam', color: '#4ECDC4', leader: 'Edappadi K. Palaniswami', overallSentiment: { positive: 32, negative: 45, neutral: 23, corruption: 35, development: 28, leadership: 22 } },
+            { id: 'BJP', name: 'Bharatiya Janata Party', color: '#FF8C42', leader: 'K. Annamalai', overallSentiment: { positive: 28, negative: 48, neutral: 24, corruption: 18, development: 32, leadership: 25 } },
+            { id: 'NTK', name: 'Naam Tamilar Katchi', color: '#6A4C93', leader: 'Seeman', overallSentiment: { positive: 45, negative: 35, neutral: 20, corruption: 12, development: 38, leadership: 42 } },
+            { id: 'TVK', name: 'Tamilaga Vettri Kazhagam', color: '#F72585', leader: 'Vijay', overallSentiment: { positive: 55, negative: 25, neutral: 20, corruption: 8, development: 45, leadership: 52 } }
+        ];
+
+        const socialMediaData = [
+            { platform: 'X (Twitter)', mentions: 45230, sentiment: 0.62, engagement: 125000 },
+            { platform: 'Facebook', mentions: 38940, sentiment: 0.58, engagement: 89000 },
+            { platform: 'Instagram', mentions: 28750, sentiment: 0.71, engagement: 156000 },
+            { platform: 'YouTube', mentions: 15680, sentiment: 0.65, engagement: 234000 }
+        ];
+
+        const trendingTopics = [
+            { topic: '#TamilNaduElections', mentions: 25430, sentiment: 0.55 },
+            { topic: '#ChennaiDevelopment', mentions: 18920, sentiment: 0.68 },
+            { topic: '#FreebieCulture', mentions: 15670, sentiment: 0.42 },
+            { topic: '#Corruption', mentions: 12340, sentiment: 0.35 },
+            { topic: '#WomenSafety', mentions: 9870, sentiment: 0.71 },
+            { topic: '#Employment', mentions: 8450, sentiment: 0.48 }
+        ];
+
+        let pieChart, barChart;
+        let selectedConstituency = null;
+        let selectedParty = null;
+
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.add('hidden'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-content').classList.remove('hidden');
+            
+            // Update tab buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+                button.classList.add('text-gray-500');
+            });
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.getElementById('tab-' + tabName).classList.remove('text-gray-500');
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: constituencies.map(c => c.name),
+                    datasets: [{
+                        data: constituencies.map(c => c.totalMentions),
+                        backgroundColor: [
+                            '#FF6B35', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', 
+                            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { padding: 10, usePointStyle: true }
+                        }
+                    },
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            showConstituencyDetails(constituencies[index]);
+                        }
+                    }
+                }
+            });
+
+            // Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: socialMediaData.map(s => s.platform),
+                    datasets: [
+                        {
+                            label: 'Mentions',
+                            data: socialMediaData.map(s => s.mentions),
+                            backgroundColor: '#4ECDC4',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Engagement',
+                            data: socialMediaData.map(s => s.engagement),
+                            backgroundColor: '#FF6B35',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // Initialize party cards
+        function initPartyCards() {
+            const container = document.getElementById('party-cards');
+            container.innerHTML = '';
+            
+            parties.forEach(party => {
+                const card = document.createElement('div');
+                card.className = 'party-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer';
+                card.onclick = () => showPartyDetails(party);
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-gray-800">${party.id}</h4>
+                        <div class="w-4 h-4 rounded-full" style="background-color: ${party.color}"></div>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-green-600">Positive:</span>
+                            <span>${party.overallSentiment.positive}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-red-600">Negative:</span>
+                            <span>${party.overallSentiment.negative}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-orange-600">Corruption Tagging:</span>
+                            <span>${party.overallSentiment.corruption}%</span>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize trending topics
+        function initTrendingTopics() {
+            const container = document.getElementById('trending-topics');
+            container.innerHTML = '';
+            
+            trendingTopics.forEach((topic, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                
+                const sentimentClass = topic.sentiment > 0.7 ? 'bg-green-500' : topic.sentiment > 0.5 ? 'bg-yellow-500' : 'bg-red-500';
+                
+                div.innerHTML = `
+                    <span class="font-medium">${topic.topic}</span>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600">${topic.mentions.toLocaleString()} mentions</span>
+                        <div class="px-2 py-1 rounded-full text-xs text-white ${sentimentClass}">
+                            ${Math.round(topic.sentiment * 100)}% positive
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        // Initialize constituency list
+        function initConstituencyList() {
+            const container = document.getElementById('constituency-list');
+            container.innerHTML = '';
+            
+            constituencies.forEach(constituency => {
+                const button = document.createElement('button');
+                button.className = 'bg-gray-100 hover:bg-gray-200 p-3 rounded-lg text-sm font-medium transition-colors';
+                button.textContent = constituency.name;
+                button.onclick = () => showConstituencyDetails(constituency);
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Show constituency details
+        function showConstituencyDetails(constituency) {
+            selectedConstituency = constituency;
+            showTab('constituency');
+            
+            const detailsContainer = document.getElementById('constituency-details');
+            detailsContainer.classList.remove('hidden');
+            
+            detailsContainer.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">${constituency.name}</h2>
+                            <button onclick="hideConstituencyDetails()" class="text-gray-600 hover:text-gray-800">✕</button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg metric-card">
+                                <div class="text-4xl mb-2">👥</div>
+                                <div class="text-2xl font-bold text-blue-600">${constituency.totalVoters.toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">Total Voters</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg metric-card">
+                                <div class="text-4xl mb-2">💬</div>
+                                <div class="text-2xl font-bold text-green-600">${constituency.totalMentions.toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">Social Mentions</div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg metric-card">
+                                <div class="text-4xl mb-2">📈</div>
+                                <div class="text-2xl font-bold text-purple-600">${(constituency.sentimentScore * 100).toFixed(1)}%</div>
+                                <div class="text-sm text-gray-600">Positive Sentiment</div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg metric-card">
+                                <div class="text-4xl mb-2">👁️</div>
+                                <div class="text-2xl font-bold text-orange-600">${Math.round(constituency.totalMentions * 2.3).toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">Total Reach</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold mb-3 text-gray-800">Locations in ${constituency.name}</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                ${constituency.locations.map(location => `
+                                    <div class="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors flex items-center" onclick="showLocationDetails('${location}')">
+                                        <span class="mr-2">📍</span>
+                                        <span class="text-sm font-medium">${location}</span>
+                                        <span class="ml-auto">▶</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-white border rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-800">Party Performance in ${constituency.name}</h3>
+                            <div class="space-y-4">
+                                ${parties.map(party => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer" onclick="showPartyDetails(${JSON.stringify(party).replace(/"/g, '&quot;')})">
+                                        <div class="flex items-center">
+                                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${party.color}"></div>
+                                            <span class="font-medium">${party.name}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-4 text-sm">
+                                            <span class="text-green-600">${party.overallSentiment.positive}% positive</span>
+                                            <span class="text-red-600">${party.overallSentiment.negative}% negative</span>
+                                            <span>▶</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Hide constituency details
+        function hideConstituencyDetails() {
+            document.getElementById('constituency-details').classList.add('hidden');
+            selectedConstituency = null;
+        }
+
+        // Show location details
+        function showLocationDetails(location) {
+            showTab('location');
+            const locationContent = document.getElementById('location-content');
+            locationContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold text-gray-800">${location}</h2>
+                            <button onclick="showTab('constituency')" class="text-gray-600 hover:text-gray-800">✕</button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Party Sentiment Analysis</h3>
+                                ${parties.map(party => `
+                                    <div class="mb-4 p-3 bg-gray-50 rounded cursor-pointer hover:bg-gray-100" onclick="showPartyDetails(${JSON.stringify(party).replace(/"/g, '&quot;')})">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center">
+                                                <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${party.color}"></div>
+                                                <span class="font-medium text-sm">${party.id}</span>
+                                            </div>
+                                            <span>▶</span>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <div class="text-center">
+                                                <div class="font-semibold text-green-600">${party.overallSentiment.positive}%</div>
+                                                <div class="text-gray-600">Positive</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="font-semibold text-red-600">${party.overallSentiment.negative}%</div>
+                                                <div class="text-gray-600">Negative</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="font-semibold text-orange-600">${party.overallSentiment.corruption}%</div>
+                                                <div class="text-gray-600">Corruption</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Key Metrics for ${location}</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Total Social Media Mentions</span>
+                                        <span class="font-semibold">${Math.floor(Math.random() * 5000) + 2000}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Engagement Rate</span>
+                                        <span class="font-semibold">${(Math.random() * 15 + 5).toFixed(1)}%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Top Platform</span>
+                                        <span class="font-semibold">X (Twitter)</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-gray-600">Voter Turnout (2021)</span>
+                                        <span class="font-semibold">${(Math.random() * 20 + 65).toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize party selection
+        function initPartySelection() {
+            const container = document.getElementById('party-selection');
+            container.innerHTML = '';
+            
+            parties.forEach(party => {
+                const card = document.createElement('div');
+                card.className = 'party-card border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer';
+                card.onclick = () => showPartyDetails(party);
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-6 h-6 rounded-full" style="background-color: ${party.color}"></div>
+                        <span class="text-xs text-gray-500">Click to analyze</span>
+                    </div>
+                    <h4 class="font-semibold text-gray-800 mb-1">${party.id}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${party.name}</p>
+                    <p class="text-xs text-gray-500">Leader: ${party.leader}</p>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Show party details
+        function showPartyDetails(party) {
+            selectedParty = party;
+            showTab('party');
+            
+            const detailsContainer = document.getElementById('party-details');
+            detailsContainer.classList.remove('hidden');
+            
+            const keyIssues = {
+                'DMK': ['Dravidian Ideology', 'Social Justice', 'Tamil Language', 'Welfare Schemes'],
+                'ADMK': ['Amma Legacy', 'Agricultural Policies', 'Infrastructure', 'Traditional Values'],
+                'BJP': ['National Integration', 'Development', 'Hindu Values', 'Central Schemes'],
+                'NTK': ['Tamil Nationalism', 'Anti-Corruption', 'Youth Employment', 'Tamil Eelam'],
+                'TVK': ['Youth Empowerment', 'Clean Politics', 'Technology', 'Progressive Policies']
+            };
+
+            const topHashtags = {
+                'DMK': ['#DMK', '#Stalin', '#DravidianModel', '#TamilNadu'],
+                'ADMK': ['#ADMK', '#EPS', '#AmmaLegacy', '#GoldenRule'],
+                'BJP': ['#BJP', '#ModiInTN', '#Development', '#HindutvaInTN'],
+                'NTK': ['#NTK', '#Seeman', '#TamilNationalism', '#YouthPower'],
+                'TVK': ['#TVK', '#Thalapathy', '#NewPolitics', '#VijayForChange']
+            };
+            
+            detailsContainer.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">${party.name}</h2>
+                                <p class="text-gray-600">Leader: ${party.leader}</p>
+                            </div>
+                            <button onclick="hidePartyDetails()" class="text-gray-600 hover:text-gray-800">✕</button>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+                            <div class="bg-green-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">👍</div>
+                                <div class="text-xl font-bold text-green-600">${party.overallSentiment.positive}%</div>
+                                <div class="text-xs text-gray-600">Positive</div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">👎</div>
+                                <div class="text-xl font-bold text-red-600">${party.overallSentiment.negative}%</div>
+                                <div class="text-xs text-gray-600">Negative</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">😐</div>
+                                <div class="text-xl font-bold text-gray-600">${party.overallSentiment.neutral}%</div>
+                                <div class="text-xs text-gray-600">Neutral</div>
+                            </div>
+                            <div class="bg-orange-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">⚠️</div>
+                                <div class="text-xl font-bold text-orange-600">${party.overallSentiment.corruption}%</div>
+                                <div class="text-xs text-gray-600">Corruption</div>
+                            </div>
+                            <div class="bg-blue-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">📈</div>
+                                <div class="text-xl font-bold text-blue-600">${party.overallSentiment.development}%</div>
+                                <div class="text-xs text-gray-600">Development</div>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg text-center metric-card">
+                                <div class="text-4xl mb-2">👥</div>
+                                <div class="text-xl font-bold text-purple-600">${party.overallSentiment.leadership}%</div>
+                                <div class="text-xs text-gray-600">Leadership</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Recent Mention Trends</h3>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm text-gray-600">Last 24 hours</span>
+                                        <span class="font-semibold" style="color: ${party.color}">${Math.floor(Math.random() * 2000) + 800} mentions</span>
+                                    </div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm text-gray-600">This week</span>
+                                        <span class="font-semibold" style="color: ${party.color}">${Math.floor(Math.random() * 15000) + 5000} mentions</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">This month</span>
+                                        <span class="font-semibold" style="color: ${party.color}">${Math.floor(Math.random() * 50000) + 20000} mentions</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Demographic Insights</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Primary Age Group</span>
+                                        <span class="font-semibold">${party.id === 'TVK' || party.id === 'NTK' ? '18-35' : '35-50'}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Gender Split</span>
+                                        <span class="font-semibold">${Math.floor(Math.random() * 30) + 40}% Male</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-600">Urban vs Rural</span>
+                                        <span class="font-semibold">${Math.floor(Math.random() * 40) + 30}% Urban</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Key Issues & Topics</h3>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    ${keyIssues[party.id].map(issue => `
+                                        <span class="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700">${issue}</span>
+                                    `).join('')}
+                                </div>
+                                
+                                <h4 class="font-medium mb-2 text-gray-800">Top Hashtags</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    ${topHashtags[party.id].map(hashtag => `
+                                        <span class="px-2 py-1 text-xs rounded" style="background-color: ${party.color}20; color: ${party.color}">${hashtag}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div class="bg-white border rounded-lg p-4">
+                                <h3 class="font-semibold mb-4 text-gray-800">Social Media Performance</h3>
+                                <div class="space-y-4">
+                                    ${socialMediaData.map(platform => `
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm text-gray-600">${platform.platform}</span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm font-medium">${Math.floor(platform.mentions * (party.overallSentiment.positive / 100))}</span>
+                                                <div class="w-16 bg-gray-200 rounded-full h-2">
+                                                    <div class="h-2 rounded-full" style="background-color: ${party.color}; width: ${platform.sentiment * 100}%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Hide party details
+        function hidePartyDetails() {
+            document.getElementById('party-details').classList.add('hidden');
+            selectedParty = null;
+        }
+
+        // Initialize summary
+        function initSummary() {
+            const container = document.getElementById('party-comparison');
+            container.innerHTML = '';
+            
+            parties.forEach(party => {
+                const card = document.createElement('div');
+                card.className = 'border rounded-lg p-6 hover:shadow-md transition-shadow';
+                
+                const overallScore = party.overallSentiment.positive - party.overallSentiment.negative;
+                const scoreColor = overallScore > 10 ? 'text-green-600' : overallScore > -10 ? 'text-yellow-600' : 'text-red-600';
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 rounded-full mr-3" style="background-color: ${party.color}"></div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${party.name}</h3>
+                                <p class="text-sm text-gray-600">Leader: ${party.leader}</p>
+                            </div>
+                        </div>
+                        <button class="px-4 py-2 text-sm rounded-lg transition-colors" style="background-color: ${party.color}20; color: ${party.color}" onclick="showPartyDetails(${JSON.stringify(party).replace(/"/g, '&quot;')})">
+                            View Details
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">${party.overallSentiment.positive}%</div>
+                            <div class="text-xs text-gray-600">Positive</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.positive > 40 ? '🔥 Strong' : party.overallSentiment.positive > 30 ? '👍 Good' : '⚠️ Weak'}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-600">${party.overallSentiment.negative}%</div>
+                            <div class="text-xs text-gray-600">Negative</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.negative > 45 ? '🚨 High' : party.overallSentiment.negative > 35 ? '⚠️ Medium' : '✅ Low'}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-600">${party.overallSentiment.neutral}%</div>
+                            <div class="text-xs text-gray-600">Neutral</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.neutral > 25 ? '😐 High' : '🤔 Low'}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-orange-600">${party.overallSentiment.corruption}%</div>
+                            <div class="text-xs text-gray-600">Corruption Tag</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.corruption > 30 ? '🚫 Critical' : party.overallSentiment.corruption > 20 ? '⚠️ Concern' : '✅ Clean'}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600">${party.overallSentiment.development}%</div>
+                            <div class="text-xs text-gray-600">Development</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.development > 40 ? '🚀 Excellent' : party.overallSentiment.development > 30 ? '👍 Good' : '📉 Poor'}
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600">${party.overallSentiment.leadership}%</div>
+                            <div class="text-xs text-gray-600">Leadership</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                ${party.overallSentiment.leadership > 45 ? '⭐ Strong' : party.overallSentiment.leadership > 25 ? '👤 Average' : '👎 Weak'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Overall Sentiment Score:</span>
+                            <span class="font-semibold ${scoreColor}">
+                                ${overallScore > 0 ? '+' : ''}${overallScore}%
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize everything when page loads
+        window.onload = function() {
+            initCharts();
+            initPartyCards();
+            initTrendingTopics();
+            initConstituencyList();
+            initPartySelection();
+            initSummary();
+        };
+    </script>
+</body>
+</html>
